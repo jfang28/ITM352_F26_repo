@@ -1,0 +1,12 @@
+total_days=20*365
+print(total_days)
+monthly_expenses=(50*52)/12
+print(monthly_expenses)
+hours_left=(total_days*24)
+print(hours_left)
+gpa=(3.9*25)
+print(gpa)
+age=(2026-2006)
+print(age)
+years_left=(2028-2026)
+print(years_left)
