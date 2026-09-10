@@ -1,0 +1,4 @@
+'''
+Write Python code that uses the input built-in function to ask the user to enter a weight in pounds. The input function always returns a string value, so use the float built-in function to convert the value entered to a float data type and determine the equivalent weight in kilograms (you can use the conversion factor that 1 pound = 0.453592 kilograms). Print a message to the user stating the weight in pounds that they entered and the equivalent weight in kilograms.
+'''
+weight_pounds = float(input("Please enter your weight in pounds: ")); weight_kilograms = weight_pounds * 0.453592; print(f"You entered {weight_pounds} pounds, which is equivalent to {weight_kilograms} kilograms.")
