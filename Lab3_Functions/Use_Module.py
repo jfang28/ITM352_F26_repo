@@ -1,4 +1,5 @@
 import HandyMath
+from HandyMath import max, min
 
 
 first_number = float(input("Enter the first number: "))
@@ -9,5 +10,9 @@ print(f"The square root of the square of the first number is "
       f"{HandyMath.squareroot(first_number ** 2)}")
 print(f"The first number raised to the second number is "
       f"{HandyMath.exponent(first_number, second_number)}")
-print(f"The maximum is {HandyMath.max(first_number, second_number)}")
-print(f"The minimum is {HandyMath.min(first_number, second_number)}")
+print(f"The maximum is {max(first_number, second_number)}")
+print(f"The minimum is {min(first_number, second_number)}")
+
+print(HandyMath.apply_function(first_number, second_number, min))
+print(HandyMath.apply_function(first_number, second_number, max))
+print(HandyMath.apply_function(first_number, second_number, HandyMath.exponent))

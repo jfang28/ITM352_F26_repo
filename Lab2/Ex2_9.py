@@ -1,4 +1,15 @@
-t = float(input("Enter the temperature: "))
-conv = input("Enter the conversion type (C for Celsius to Fahrenheit, F for Fahrenheit to Celsius): ")
-tmp = 9 / 5 * t + 32 if conv == 'C' else (t - 32) * 5 / 9
-print(f"The converted temperature is: {tmp}")
+from cryptography.fernet import Fernet
+
+
+key = Fernet.generate_key()
+cipher = Fernet(key)
+message = input("Enter a message to encrypt: ")
+
+# Fernet works with bytes, so encode the string before encryption.
+encoded_message = message.encode("utf-8")
+encrypted_message = cipher.encrypt(encoded_message)
+decrypted_message = cipher.decrypt(encrypted_message)
+
+# Decryption returns bytes, so decode them back into a readable string.
+print(f"Encrypted message: {encrypted_message}")
+print(f"Decrypted message: {decrypted_message.decode('utf-8')}")
