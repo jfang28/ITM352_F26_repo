@@ -1,19 +1,18 @@
 age = int(input("Enter your age: "))
-day = input("Enter the day of the week: ").capitalize()
-matinee = input("Is it a matinee showing? (yes/no): ").capitalize()
+weekday = input("Enter the day of the week: ").strip().capitalize()
+matinee = input("Is it a matinee showing? (yes/no): ").strip().lower() == "yes"
 
-senior = True if(age >= 65) else False
-is_tuesday = True if(day == "Tuesday") else False
-is_matinee = True if(matinee == "Yes") else False
+senior = age >= 65
+is_tuesday = weekday.lower() == "tuesday"
 
 price = 14  # normal price
 
-if is_matinee:
-    if age >= 65:
+if matinee:
+    if senior:
         price = 5
     else:
         price = 8
-elif senior >= 65:
+elif senior:
     price = 8
 elif is_tuesday:
     price = 10
