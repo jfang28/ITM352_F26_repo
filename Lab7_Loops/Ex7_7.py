@@ -1,5 +1,5 @@
 i = 0
-while true:
+while True:
     i += 1
     if i == 5:
         continue
