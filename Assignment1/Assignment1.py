@@ -6,7 +6,7 @@ print("You will be asked a series of questions. Please select the correct answer
 time.sleep(4)
 print("Each correct answer will earn you 1 point. Each incorrect answer will deduct 1 point.")
 time.sleep(4)
-print("Each question has 1 hint available. You can get a hint by typing 'hint'.")
+print("Each question has 3 hints available. You can get a hint by typing 'hint'.")
 time.sleep(3)
 print("Would you like to begin?")
 time.sleep(1)
@@ -22,21 +22,23 @@ from quiz_functions import show_hint
 
 #ask user question, display options, ask if hint needed, display correct answer
 points = 0
+hints_used = 0
 for question in questions:
+    hint_index = 0
     print(question["question"])
     for option in question["options"]:
         print(option)
     user_answer = input("Your answer (select letter): ").strip().upper()
     while True:
         if user_answer.lower() == "hint":
-            show_hint(question["hint"])
+            hint_index, hints_used = show_hint(question["hint"], hint_index, hints_used)
             user_answer = input("Your answer (select letter): ").strip().upper()
             continue
         if user_answer not in ["A", "B", "C", "D"]:
             print("Invalid answer. Please select a letter (A, B, C, D).")
             user_answer = input("Your answer (select letter): ").strip().upper()
             continue
-        if user_answer == question["answer"]:
+        if user_answer == question["answer"]: 
             print("Correct!")
             points += 1
         else:
@@ -47,3 +49,4 @@ for question in questions:
 
 #display final score
 print("Your final score is", points)
+print("You used", hints_used, "hints.")
