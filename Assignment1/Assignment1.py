@@ -16,8 +16,9 @@ if user_start != "yes":
     print(":( Please reconsider.")
     exit()
 
-#quiz questions
+#quiz questions/hints
 from questions import questions
+from quiz_functions import show_hint
 
 #ask user question, display options, ask if hint needed, display correct answer
 points = 0
@@ -28,7 +29,7 @@ for question in questions:
     user_answer = input("Your answer (select letter): ").strip().upper()
     while True:
         if user_answer.lower() == "hint":
-            print("Hint:", question["hint"])
+            show_hint(question["hint"])
             user_answer = input("Your answer (select letter): ").strip().upper()
             continue
         if user_answer not in ["A", "B", "C", "D"]:
