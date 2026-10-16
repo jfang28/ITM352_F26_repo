@@ -48,5 +48,5 @@ for question in questions:
         break
 
 #display final score
-print("Your final score is", points)
+print("Your final score is", points, "points.")
 print("You used", hints_used, "hints.")
