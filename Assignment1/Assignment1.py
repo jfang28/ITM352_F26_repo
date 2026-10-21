@@ -1,5 +1,8 @@
 #welcome the user
 import time
+from datetime import datetime
+from pathlib import Path
+
 print("Welcome to the quiz!")
 time.sleep(1)
 print("You will be asked a series of questions. Please select the correct answer from the options provided.")
@@ -48,5 +51,11 @@ for question in questions:
         break
 
 #display final score
-print("Your final score is", points)
+print("Your final score is", points, "points.")
 print("You used", hints_used, "hints.")
+
+score_history = Path(__file__).with_name("score_history.txt")
+with score_history.open("a", encoding="utf-8") as score_file:
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    score_file.write(f"{timestamp} - {points} points\n")
+print("Your score was saved to score_history.txt.")
