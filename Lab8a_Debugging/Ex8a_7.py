@@ -25,15 +25,11 @@ def choose_badge(average):
        return "Bronze"
 
 
-for name, days in weekly_steps.items():
-   try:
-       average = sum(days) / len(days)
-   except TypeError:
-       print(f"Invalid step count for {name}: all daily steps must be numbers.")
-       continue
-   except ZeroDivisionError:
-       print(f"Cannot calculate an average for {name}: no daily steps were provided.")
-       continue
-
+for name in weekly_steps:
+   total = 0
+   days = weekly_steps[name]
+   for steps in days:
+       total += steps
+   average = total / len(days)
    badge = choose_badge(average)
    print(name.ljust(8), "average:", format(average, ",.0f"), "steps/day ->", badge)
