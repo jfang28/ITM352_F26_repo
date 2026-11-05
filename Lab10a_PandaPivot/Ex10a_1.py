@@ -3,11 +3,8 @@ import os
 import certifi
 import pandas as pd
 
-# Python installations on macOS can otherwise use the wrong certificate store.
-# certifi supplies the same CA trust while leaving HTTPS verification enabled.
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 
-# Use the published/raw URL for the CSV provided by the instructor:
 SALES_DATA_URL = (
     "https://raw.githubusercontent.com/jfang28/ITM352_F26_repo/main/Lab10a_PandaPivot/sales_data.csv"
 )
@@ -28,6 +25,13 @@ except (OSError, pd.errors.ParserError) as error:
         dtype_backend="pyarrow",
         on_bad_lines="skip",
     )
+
+# Convert them to pandas datetime values so dates can be compared and grouped.
+sales_data["order_date"] = pd.to_datetime(
+    sales_data["order_date"],
+    format="mixed",
+    errors="coerce",
+)
 
 print(sales_data.head(5))
 print("\nColumn data types:")
