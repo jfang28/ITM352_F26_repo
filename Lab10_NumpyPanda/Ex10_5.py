@@ -22,8 +22,12 @@ large_properties = properties[properties["units"] >= 500].copy()
 large_properties = large_properties.drop(
     columns=["id", "block", "lot", "easement"]
 )
+large_properties = large_properties.dropna().drop_duplicates()
+large_properties = large_properties[large_properties["sale_price"] > 0].copy()
 
 print("Cleaned data types:")
 print(large_properties.dtypes)
 print("\nCleaned data:")
-print(large_properties.head(10))
+print(large_properties.to_string(index=False))
+print("\nAverage sale price:")
+print(f"{large_properties['sale_price'].mean():.2f}")
