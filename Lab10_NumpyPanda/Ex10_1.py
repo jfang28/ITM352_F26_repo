@@ -1,6 +1,4 @@
-
 import numpy as np
-
 
 income_percentiles = [
     (10, 14629),
@@ -15,6 +13,11 @@ income_percentiles = [
 ]
 
 income_array = np.array(income_percentiles)
+
+print("Percentile\tHousehold Income")
+print("----------\t----------------")
+for percentile, household_income in income_array:
+    print(f"{percentile:>9}\t{household_income:>16}")
 
 print("Dimensions:", income_array.ndim)
 print("Number of elements:", income_array.size)
