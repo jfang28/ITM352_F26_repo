@@ -9,8 +9,7 @@ os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 
 # Use the published/raw URL for the CSV provided by the instructor:
 SALES_DATA_URL = (
-    "https://raw.githubusercontent.com/jfang28/ITM352_F26_repo/main/"
-    "Lab10a_PandaPivot/sales_data.csv"
+    "https://raw.githubusercontent.com/jfang28/ITM352_F26_repo/main/Lab10a_PandaPivot/sales_data.csv"
 )
 
 pd.set_option("display.max_columns", None)
