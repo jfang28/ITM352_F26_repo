@@ -149,15 +149,131 @@ def display_initial_rows(data):
     print(data.head(row_count).to_string(index=False))
     return True
 
+#part 4 addition
+def display_menu():
+    print("\nSales Data Analysis Menu")
+    print("1. Display initial rows")
+    print("2. Display summary statistics")
+    print("3. Show total sales by region")
+    print("4. Filter and display sales by region")
+    print("5. Search by employee or customer name")
+    print("6. Quit")
+
+
+def require_columns(data, columns):
+    missing_columns = [column for column in columns if column not in data.columns]
+    if missing_columns:
+        print("This analysis is unavailable. Missing columns: " + ", ".join(missing_columns))
+        return False
+    return True
+
+
+def display_summary_statistics(data):
+    print("\nSummary Statistics")
+
+    if not require_columns(data, ("quantity", "unit_price", "order_date")):
+        return
+
+    numeric_data = data[["quantity", "unit_price"]].apply(pd.to_numeric, errors="coerce")
+    print(f"Rows: {len(data)}")
+    print(f"Total quantity sold: {numeric_data['quantity'].sum():,.0f}")
+    print(f"Average unit price: ${numeric_data['unit_price'].mean():,.2f}")
+    print(f"Total sales value: ${(numeric_data['quantity'] * numeric_data['unit_price']).sum():,.2f}")
+
+    valid_dates = data["order_date"].dropna()
+    if len(valid_dates) > 0:
+        print(f"Date range: {valid_dates.min().date()} to {valid_dates.max().date()}")
+
+
+def display_sales_by_region(data):
+    if not require_columns(data, ("sales_region", "quantity", "unit_price")):
+        return
+
+    analysis = data.copy()
+    analysis["quantity"] = pd.to_numeric(analysis["quantity"], errors="coerce")
+    analysis["unit_price"] = pd.to_numeric(analysis["unit_price"], errors="coerce")
+    analysis["sales_value"] = analysis["quantity"] * analysis["unit_price"]
+    totals = analysis.groupby("sales_region", dropna=False)["sales_value"].sum()
+
+    print("\nTotal Sales by Region")
+    if totals.empty:
+        print("No regional sales data is available.")
+        return
+
+    for region, total in totals.sort_values(ascending=False).items():
+        print(f"{region}: ${total:,.2f}")
+
+
+def filter_sales_by_region(data):
+    if not require_columns(data, ("sales_region",)):
+        return
+
+    regions = sorted(str(region) for region in data["sales_region"].dropna().unique())
+    if not regions:
+        print("No sales regions are available in the data.")
+        return
+
+    print("Available regions: " + ", ".join(regions))
+    region = input("Enter a sales region: ").strip()
+    matches = data[data["sales_region"].astype("string").str.casefold() == region.casefold()]
+    print(f"\nFound {len(matches)} matching rows.")
+    if len(matches) > 0:
+        print(matches.to_string(index=False))
+
+
+def search_sales(data):
+    columns = [column for column in ("employee_name", "customer_name") if column in data.columns]
+    if not columns:
+        print("This search is unavailable. Employee and customer name columns are missing.")
+        return
+
+    search_text = input("Enter a name to search for: ").strip()
+    if not search_text:
+        print("Search cancelled.")
+        return
+
+    matches = pd.Series(False, index=data.index)
+    for column in columns:
+        matches |= data[column].astype("string").str.contains(search_text, case=False, na=False)
+
+    results = data[matches]
+    print(f"\nFound {len(results)} matching rows.")
+    if len(results) > 0:
+        print(results.to_string(index=False))
+
 
 def main():
-    # Load the local test data once, then repeatedly ask the user for row counts.
+    # Load the local test data once and offer the analysis actions repeatedly.
     local_data = load_csv(Path(__file__).with_name("sales_data_test.csv"))
 
-    # Keep the application running until display_initial_rows() requests an exit.
+    if local_data is None:
+        print("The sales application cannot continue without valid sales data.")
+        return
+
     while True:
-        if not display_initial_rows(local_data):
+        display_menu()
+
+        try:
+            choice = input("Select an option: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting the program.")
             break
+
+        if choice == "1":
+            display_initial_rows(local_data)
+        elif choice == "2":
+            display_summary_statistics(local_data)
+        elif choice == "3":
+            display_sales_by_region(local_data)
+        elif choice == "4":
+            filter_sales_by_region(local_data)
+        elif choice == "5":
+            search_sales(local_data)
+        elif choice in ("6", "q", "quit", "exit"):
+            print("Exiting the program.")
+            break
+        else:
+            print("Invalid option. Please enter a number from 1 to 6.")
 
 
 if __name__ == "__main__":
