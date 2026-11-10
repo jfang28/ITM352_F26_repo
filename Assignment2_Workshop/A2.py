@@ -6,8 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-# Use trusted certificates and pandas to load the sales data.
-import certifi
+# Use pandas to load the sales data.
 import pandas as pd
 
 # Store the Google Drive CSV address and the columns required by the dashboard.
@@ -34,7 +33,7 @@ def load_csv(source):
 
         # Download remote CSV files before passing their contents to pandas.
         if urlparse(source).scheme in ("http", "https"):
-            context = ssl.create_default_context(cafile=certifi.where())
+            context = ssl.create_default_context()
             with urlopen(source, context=context) as response:
                 source_to_read = BytesIO(response.read())
 
