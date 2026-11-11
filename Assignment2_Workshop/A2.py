@@ -148,15 +148,123 @@ def display_initial_rows(data):
     print(data.head(row_count).to_string(index=False))
     return True
 
-#part 4 addition
+menu_options = (
+    "Display initial rows",
+    "Display summary statistics",
+    "Show total sales by region",
+    "Filter and display sales by region",
+    "Search by employee or customer name",
+    "Generate custom pivot table",
+    "Quit",
+)
+
+
+def get_user_selection(options, prompt):
+    print(prompt)
+    for i, option in enumerate(options):
+        print(f"{i + 1}. {option}")
+
+    choice = input("Enter the number(s) of your choice(s), separated by commas: ").strip()
+    if not choice:
+        return []
+
+    try:
+        indices = [int(item.strip()) - 1 for item in choice.split(",")]
+    except ValueError:
+        print("Invalid selection. Enter option numbers separated by commas.")
+        return []
+
+    if any(index < 0 or index >= len(options) for index in indices):
+        print("Invalid selection. Choose numbers from the listed options.")
+        return []
+
+    return [options[index] for index in indices]
+
+
+def generate_custom_pivot_table(data):
+    row_options = list(data.columns)
+    col_options = row_options
+    value_options = list(data.select_dtypes(include=["number"]).columns)
+    agg_options = ["sum", "mean", "count"]
+
+    try:
+        rows = get_user_selection(row_options, "\nSelect rows (required):")
+    except (EOFError, KeyboardInterrupt):
+        print("\nCustom pivot table cancelled.")
+        return
+
+    if not rows:
+        print("Select at least one row field.")
+        return
+    if len(rows) != len(set(rows)):
+        print("Each row field can only be selected once.")
+        return
+    if any(column not in row_options for column in rows):
+        print("Invalid row field selection. Choose from the available row fields.")
+        return
+
+    col_options = [col for col in col_options if col not in rows]
+    try:
+        columns = get_user_selection(
+            col_options, "\nSelect columns (optional; press Enter for none):"
+        )
+    except (EOFError, KeyboardInterrupt):
+        print("\nCustom pivot table cancelled.")
+        return
+
+    if len(columns) != len(set(columns)):
+        print("Each column field can only be selected once.")
+        return
+    if any(column not in col_options for column in columns):
+        print("Invalid column field selection. Choose from the available column fields.")
+        return
+
+    available_value_options = [
+        option for option in value_options if option not in rows and option not in columns
+    ]
+    if not available_value_options:
+        print("No numeric fields are available to aggregate for these row and column fields.")
+        return
+
+    try:
+        selected_values = get_user_selection(available_value_options, "\nSelect a value field:")
+    except (EOFError, KeyboardInterrupt):
+        print("\nCustom pivot table cancelled.")
+        return
+
+    if len(selected_values) != 1:
+        print("Select exactly one value field.")
+        return
+    value = selected_values[0]
+
+    try:
+        selected_aggregations = get_user_selection(
+            agg_options, "\nSelect an aggregation function:"
+        )
+    except (EOFError, KeyboardInterrupt):
+        print("\nCustom pivot table cancelled.")
+        return
+
+    if len(selected_aggregations) != 1:
+        print("Select exactly one aggregation function.")
+        return
+    aggregation = selected_aggregations[0]
+
+    pivot_table = pd.pivot_table(
+        data,
+        index=rows,
+        columns=columns or None,
+        values=value,
+        aggfunc=aggregation,
+    )
+    print("\nCustom Pivot Table")
+    print(pivot_table.to_string())
+
+
 def display_menu():
     print("\nSales Data Analysis Menu")
-    print("1. Display initial rows")
-    print("2. Display summary statistics")
-    print("3. Show total sales by region")
-    print("4. Filter and display sales by region")
-    print("5. Search by employee or customer name")
-    print("6. Quit")
+    for option_number, option in enumerate(menu_options, start=1):
+        print(f"{option_number}. {option}")
 
 
 def require_columns(data, columns):
@@ -268,11 +376,13 @@ def main():
             filter_sales_by_region(local_data)
         elif choice == "5":
             search_sales(local_data)
-        elif choice in ("6", "q", "quit", "exit"):
+        elif choice == "6":
+            generate_custom_pivot_table(local_data)
+        elif choice in ("7", "q", "quit", "exit"):
             print("Exiting the program.")
             break
         else:
-            print("Invalid option. Please enter a number from 1 to 6.")
+            print(f"Invalid option. Please enter a number from 1 to {len(menu_options)}.")
 
 
 if __name__ == "__main__":
