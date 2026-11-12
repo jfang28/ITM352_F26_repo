@@ -30,6 +30,45 @@ def sample_sales_data():
     )
 
 
+class DashboardDataHelperTests(unittest.TestCase):
+    """Cover shared loading, validation, preparation, and output helpers."""
+
+    def test_require_columns_reports_missing_fields(self):
+        data = sample_sales_data()
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertTrue(dashboard.require_columns(data, ("sales_region",)))
+            self.assertFalse(dashboard.require_columns(data, ("missing_field",)))
+        self.assertIn("Missing columns: missing_field", output.getvalue())
+
+    def test_make_analysis_data_coerces_values_without_mutating_source(self):
+        data = sample_sales_data()
+        data["quantity"] = ["2", "invalid", "1"]
+        data["unit_price"] = ["10", "5", "invalid"]
+
+        analysis = dashboard.make_analysis_data(
+            data, ("quantity", "unit_price")
+        )
+
+        self.assertEqual(analysis["sales_value"].tolist(), [20, 0, 0])
+        self.assertEqual(data["quantity"].tolist(), ["2", "invalid", "1"])
+
+    def test_print_pivot_formats_results(self):
+        pivot = dashboard.pd.DataFrame({"quantity": [5]}, index=["West"])
+        output = StringIO()
+        with redirect_stdout(output):
+            dashboard.print_pivot("Quantity by Region", pivot)
+        self.assertIn("Quantity by Region", output.getvalue())
+        self.assertIn("West", output.getvalue())
+        self.assertIn("5", output.getvalue())
+
+    def test_print_pivot_reports_empty_results(self):
+        output = StringIO()
+        with redirect_stdout(output):
+            dashboard.print_pivot("Empty Analysis", dashboard.pd.DataFrame())
+        self.assertIn("No data is available", output.getvalue())
+
+
 class DashboardPivotTests(unittest.TestCase):
     """Check that the predefined analyses aggregate the intended data."""
 
@@ -131,6 +170,34 @@ class DashboardPivotTests(unittest.TestCase):
         self.assertEqual(output.call_args.args[1].loc["West", "quantity"], 5)
 
 
+class DashboardInputHelperTests(unittest.TestCase):
+    """Cover reusable validated selection input used by custom pivots."""
+
+    def test_get_user_selection_accepts_multiple_options(self):
+        options = ("region", "employee", "order type")
+        with patch("builtins.input", return_value="1,3"):
+            selected = dashboard.get_user_selection(options, "Select fields:")
+        self.assertEqual(selected, ["region", "order type"])
+
+    def test_get_user_selection_retries_duplicates_and_out_of_range(self):
+        options = ("region", "employee", "order type")
+        output = StringIO()
+        with patch("builtins.input", side_effect=["1,1", "0", "2,3"]):
+            with redirect_stdout(output):
+                selected = dashboard.get_user_selection(options, "Select fields:")
+        self.assertEqual(selected, ["employee", "order type"])
+        self.assertIn("Each option can only be selected once", output.getvalue())
+        self.assertIn("Choose numbers from the listed options", output.getvalue())
+
+    def test_get_user_selection_returns_none_when_cancelled(self):
+        output = StringIO()
+        with patch("builtins.input", side_effect=EOFError):
+            with redirect_stdout(output):
+                selected = dashboard.get_user_selection(("region",), "Select fields:")
+        self.assertIsNone(selected)
+        self.assertIn("Selection cancelled", output.getvalue())
+
+
 class DashboardMenuTests(unittest.TestCase):
     """Ensure every ordered menu item is connected to an action function."""
 
@@ -140,6 +207,26 @@ class DashboardMenuTests(unittest.TestCase):
         self.assertEqual(labels[0], "Show the first n rows of sales data")
         self.assertEqual(labels[-1], "Exit")
         self.assertTrue(all(callable(handler) for _, handler in dashboard.MENU_ITEMS))
+
+    def test_display_menu_shows_numbered_actions(self):
+        output = StringIO()
+        with redirect_stdout(output):
+            dashboard.display_menu()
+        self.assertIn("1. Show the first n rows of sales data", output.getvalue())
+        self.assertIn("10. Exit", output.getvalue())
+
+    def test_exit_dashboard_signals_the_menu_loop_to_stop(self):
+        output = StringIO()
+        with redirect_stdout(output):
+            result = dashboard.exit_dashboard(sample_sales_data())
+        self.assertIs(result, False)
+        self.assertIn("Exiting the Sales Data Dashboard.", output.getvalue())
+
+    def test_main_exits_if_data_cannot_be_loaded(self):
+        with patch.object(dashboard, "load_sales_data", return_value=None):
+            with self.assertRaises(SystemExit) as error:
+                dashboard.main()
+        self.assertEqual(error.exception.code, 1)
 
     def test_first_rows_blank_input_skips_preview(self):
         output = StringIO()
@@ -203,6 +290,19 @@ class DashboardRowSelectionTests(unittest.TestCase):
             selected = dashboard.select_analysis_rows(sample_sales_data())
         self.assertIsNone(selected)
 
+    def test_blank_selection_uses_all_rows(self):
+        data = sample_sales_data()
+        with patch("builtins.input", return_value=""):
+            selected = dashboard.select_analysis_rows(data)
+        self.assertIs(selected, data)
+
+    def test_empty_data_does_not_prompt_for_rows(self):
+        data = sample_sales_data().iloc[0:0]
+        with patch("builtins.input") as user_input:
+            selected = dashboard.select_analysis_rows(data)
+        self.assertTrue(selected.empty)
+        user_input.assert_not_called()
+
     def test_dashboard_passes_only_selected_rows_to_analysis(self):
         data = sample_sales_data()
         analysis = Mock()
@@ -254,6 +354,39 @@ class DashboardDatasetTests(unittest.TestCase):
         self.assertTrue(set(dashboard.REQUIRED_COLUMNS).issubset(data.columns))
         self.assertIn("Island Gift Basket", data["produce_name"].values)
 
+    def test_loads_original_source_and_fills_blank_cells(self):
+        data = sample_sales_data()
+        data["customer_state"] = data["customer_state"].astype(object)
+        data.loc[1, "customer_state"] = None
+        output = StringIO()
+        with patch("builtins.input", return_value="1"):
+            with patch.object(dashboard.pd, "read_csv", return_value=data) as read_csv:
+                with redirect_stdout(output):
+                    loaded_data = dashboard.load_sales_data()
+        read_csv.assert_called_once_with(dashboard.SALES_DATA_URL)
+        self.assertEqual(loaded_data.loc[1, "customer_state"], 0)
+        self.assertIn("Original sales data", output.getvalue())
+
+    def test_load_failure_is_reported_without_raising(self):
+        output = StringIO()
+        with patch("builtins.input", return_value="2"):
+            with patch.object(
+                dashboard.pd,
+                "read_csv",
+                side_effect=dashboard.pd.errors.ParserError("invalid CSV"),
+            ):
+                with redirect_stdout(output):
+                    data = dashboard.load_sales_data()
+        self.assertIsNone(data)
+        self.assertIn("Unable to load", output.getvalue())
+        self.assertIn("ParserError", output.getvalue())
+
+    def test_cancelled_dataset_selection_does_not_read_file(self):
+        with patch("builtins.input", return_value="q"):
+            with patch.object(dashboard.pd, "read_csv") as read_csv:
+                data = dashboard.load_sales_data()
+        self.assertIsNone(data)
+        read_csv.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()
