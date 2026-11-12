@@ -5,7 +5,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -165,6 +165,94 @@ class DashboardMenuTests(unittest.TestCase):
         self.assertIn("Invalid input.", output.getvalue())
         self.assertIn("Rows available: 3", output.getvalue())
         self.assertEqual(output.getvalue().count("Olive Oil"), 2)
+
+
+class DashboardRowSelectionTests(unittest.TestCase):
+    """Verify per-analysis row ranges and lists select only requested records."""
+
+    def select_rows(self, selections):
+        with patch("builtins.input", side_effect=selections):
+            return dashboard.select_analysis_rows(sample_sales_data())
+
+    def test_selects_inclusive_row_range(self):
+        selected = self.select_rows(["1-2"])
+        self.assertEqual(selected["quantity"].tolist(), [2, 3])
+
+    def test_selects_list_in_requested_order(self):
+        selected = self.select_rows(["3,1"])
+        self.assertEqual(selected["produce_name"].tolist(), ["Gift Basket", "Olive Oil"])
+
+    def test_retries_out_of_range_selection(self):
+        output = StringIO()
+        with patch("builtins.input", side_effect=["1-4", "2"]):
+            with redirect_stdout(output):
+                selected = dashboard.select_analysis_rows(sample_sales_data())
+        self.assertEqual(selected["quantity"].tolist(), [3])
+        self.assertIn("Choose row numbers from 1 to 3", output.getvalue())
+
+    def test_rejects_duplicate_rows(self):
+        output = StringIO()
+        with patch("builtins.input", side_effect=["1-2,2", "1,3"]):
+            with redirect_stdout(output):
+                selected = dashboard.select_analysis_rows(sample_sales_data())
+        self.assertEqual(selected["quantity"].tolist(), [2, 1])
+        self.assertIn("Each row can only be selected once", output.getvalue())
+
+    def test_can_cancel_analysis_row_selection(self):
+        with patch("builtins.input", return_value="q"):
+            selected = dashboard.select_analysis_rows(sample_sales_data())
+        self.assertIsNone(selected)
+
+    def test_dashboard_passes_only_selected_rows_to_analysis(self):
+        data = sample_sales_data()
+        analysis = Mock()
+        menu_items = (("Test analysis", analysis), ("Exit", dashboard.exit_dashboard))
+        with (
+            patch.object(dashboard, "load_sales_data", return_value=data),
+            patch.object(dashboard, "MENU_ITEMS", menu_items),
+            patch.object(dashboard, "display_menu"),
+            patch("builtins.input", side_effect=["1", "1-2", "2"]),
+            redirect_stdout(StringIO()),
+        ):
+            dashboard.main()
+        self.assertEqual(analysis.call_args.args[0]["quantity"].tolist(), [2, 3])
+
+
+class DashboardDatasetTests(unittest.TestCase):
+    """Verify dataset selection and loading behavior."""
+
+    def test_selects_alternate_dataset(self):
+        output = StringIO()
+        with patch("builtins.input", return_value="2"):
+            with redirect_stdout(output):
+                source = dashboard.select_sales_data_source()
+        self.assertEqual(source, dashboard.SALES_DATA_SOURCES[1])
+        self.assertIn("Alternate sample sales data", output.getvalue())
+
+    def test_retries_invalid_dataset_selection(self):
+        output = StringIO()
+        with patch("builtins.input", side_effect=["3", "1"]):
+            with redirect_stdout(output):
+                source = dashboard.select_sales_data_source()
+        self.assertEqual(source, dashboard.SALES_DATA_SOURCES[0])
+        self.assertIn("Enter a number from 1 to 2", output.getvalue())
+
+    def test_can_cancel_dataset_selection(self):
+        output = StringIO()
+        with patch("builtins.input", return_value="q"):
+            with redirect_stdout(output):
+                source = dashboard.select_sales_data_source()
+        self.assertIsNone(source)
+        self.assertIn("selection cancelled", output.getvalue().lower())
+
+    def test_loads_alternate_dataset(self):
+        output = StringIO()
+        with patch("builtins.input", return_value="2"):
+            with redirect_stdout(output):
+                data = dashboard.load_sales_data()
+        self.assertEqual(len(data), 6)
+        self.assertTrue(set(dashboard.REQUIRED_COLUMNS).issubset(data.columns))
+        self.assertIn("Island Gift Basket", data["produce_name"].values)
 
 
 if __name__ == "__main__":

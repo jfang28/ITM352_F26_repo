@@ -1,14 +1,21 @@
 """Interactive command-line sales dashboard using Pandas pivot tables."""
 
 from datetime import datetime
+from pathlib import Path
 from time import perf_counter
 
 import pandas as pd
 
 
+# Configure the main dataset and alternative dataset available at startup.
 SALES_DATA_URL = (
     "https://drive.google.com/uc?export=download"
     "&id=1Fv_vhoN4sTrUaozFPfzr0NCyHJLIeXEA"
+)
+ALTERNATE_SALES_DATA_PATH = Path(__file__).with_name("sales_data_alternate.csv")
+SALES_DATA_SOURCES = (
+    ("Original sales data (Google Drive)", SALES_DATA_URL),
+    ("Alternate sample sales data (local CSV)", ALTERNATE_SALES_DATA_PATH),
 )
 
 # These fields are needed across the dashboard's predefined analyses.
@@ -26,14 +33,43 @@ REQUIRED_COLUMNS = (
 )
 
 
+# Dataset selection options
+def select_sales_data_source():
+    """Return the chosen dataset label and source, or None if selection is cancelled."""
+    while True:
+        print("\nSelect sales data to load:")
+        for number, (label, _) in enumerate(SALES_DATA_SOURCES, start=1):
+            print(f"{number}. {label}")
+        print("Enter q to cancel.")
+
+        try:
+            selection = input("Your choice: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nDataset selection cancelled.")
+            return None
+
+        if selection == "q":
+            print("Dataset selection cancelled.")
+            return None
+        if selection.isdigit():
+            index = int(selection) - 1
+            if 0 <= index < len(SALES_DATA_SOURCES):
+                return SALES_DATA_SOURCES[index]
+        print(f"Enter a number from 1 to {len(SALES_DATA_SOURCES)}, or q to cancel.")
+
+
 def load_sales_data():
-    """Download the Google Drive CSV and report its load status and schema."""
-    print("Loading sales_data.csv from Google Drive...")
+    """Load the selected CSV and report its load status and schema."""
+    selected_source = select_sales_data_source()
+    if selected_source is None:
+        return None
+
+    source_label, source = selected_source
+    print(f"Loading {source_label}...")
     start_time = perf_counter()
 
     try:
-        # Let Pandas download and parse the CSV directly from its Google Drive URL.
-        data = pd.read_csv(SALES_DATA_URL)
+        data = pd.read_csv(source)
     except (
         TimeoutError,
         OSError,
@@ -43,7 +79,7 @@ def load_sales_data():
         ValueError,
     ) as error:
         print(
-            "ERROR: Unable to load sales_data.csv "
+            f"ERROR: Unable to load {source_label} "
             f"({type(error).__name__}): {error}"
         )
         return None
@@ -53,7 +89,7 @@ def load_sales_data():
     elapsed = perf_counter() - start_time
     loaded_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    print(f"sales_data.csv loaded successfully at {loaded_at}.")
+    print(f"{source_label} loaded successfully at {loaded_at}.")
     print(f"Load time: {elapsed:.3f} seconds")
     print(f"Rows of data: {len(data):,}")
     print("Available columns:")
@@ -73,6 +109,7 @@ def load_sales_data():
     return data
 
 
+# Validate fields, normalize calculations, and format output.
 def require_columns(data, columns):
     """Return whether all columns required for an analysis are available."""
     missing_columns = [column for column in columns if column not in data.columns]
@@ -108,6 +145,65 @@ def print_pivot(title, pivot):
         print(pivot.to_string())
 
 
+# Allow user to select range of row for analysis.
+def select_analysis_rows(data):
+    """Return the chosen 1-based row range/list for one analysis, or None to cancel."""
+    row_count = len(data)
+    if row_count == 0:
+        print("No data rows are available to analyze.")
+        return data
+
+    while True:
+        print(f"\nRows available for this analysis: 1 to {row_count}")
+        print("Enter a range (for example, 1-10) or row numbers (for example, 1,3,5).")
+        print("Separate ranges and row numbers with commas; press Enter for all rows.")
+        print("Enter q to cancel this analysis. Use menu option 1 to preview row numbers.")
+        try:
+            selection = input("Rows to analyze: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nAnalysis cancelled.")
+            return None
+
+        if selection == "q":
+            print("Analysis cancelled.")
+            return None
+        if not selection or selection == "all":
+            return data
+
+        try:
+            row_numbers = []
+            out_of_range = False
+            for item in selection.split(","):
+                item = item.strip()
+                if "-" in item:
+                    if item.count("-") != 1:
+                        raise ValueError
+                    first, last = (int(value.strip()) for value in item.split("-"))
+                    if first > last:
+                        raise ValueError
+                    if first < 1 or last > row_count:
+                        print(f"Choose row numbers from 1 to {row_count}.")
+                        out_of_range = True
+                        break
+                    row_numbers.extend(range(first, last + 1))
+                else:
+                    row_numbers.append(int(item))
+        except ValueError:
+            print("Invalid rows. Enter a range such as 1-10 or a list such as 1,3,5.")
+            continue
+
+        if out_of_range:
+            continue
+        if len(row_numbers) != len(set(row_numbers)):
+            print("Each row can only be selected once.")
+            continue
+        if any(row_number < 1 or row_number > row_count for row_number in row_numbers):
+            print(f"Choose row numbers from 1 to {row_count}.")
+            continue
+
+        return data.iloc[[row_number - 1 for row_number in row_numbers]].copy()
+
+
 # Menu item 1: display a validated number of rows, all rows, or skip the preview.
 def show_first_rows(data):
     """Display the first n rows, where n is chosen by the user."""
@@ -132,7 +228,10 @@ def show_first_rows(data):
             print("Preview skipped.")
             return
         if selection == "all":
-            print(data.to_string(index=False))
+            preview = data.copy()
+            preview.index = range(1, available_rows + 1)
+            preview.index.name = "Row"
+            print(preview.to_string())
             return
 
         try:
@@ -144,7 +243,10 @@ def show_first_rows(data):
             print(f"Invalid input. Enter a number from 1 to {available_rows}.")
             continue
 
-        print(data.head(row_count).to_string(index=False))
+        preview = data.head(row_count).copy()
+        preview.index = range(1, row_count + 1)
+        preview.index.name = "Row"
+        print(preview.to_string())
         return
 
 
@@ -453,7 +555,13 @@ def main():
 
         # Each menu tuple binds its displayed label to the function that performs it.
         handler = MENU_ITEMS[menu_number - 1][1]
-        if handler(sales_data) is False:
+        analysis_data = sales_data
+        if handler not in (show_first_rows, exit_dashboard):
+            analysis_data = select_analysis_rows(sales_data)
+            if analysis_data is None:
+                continue
+
+        if handler(analysis_data) is False:
             return
 
 
