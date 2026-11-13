@@ -1,0 +1,11 @@
+#Quality requirements
+User Input Validation: Ensure the user inputs are valid (e.g., selecting only available fields).
+Documentation: Clear and useful code comments. Explain the design of non-trivial things. Remove unnecessary or trivial comments.
+Defensive programming: Anticipate and handle potential problems to ensure the application will not fault given a bad or inaccessible data file, corrupt or bad data, bad inputs, etc. Use assertions as you write the code to help determine where you need error handling.
+Style: Follow good naming conventions for variables, functions, and file names. Use custom functions to organize, document, and increase flexibility
+User Interface: The menu should be intuitive and should give instructions for inputs, the output should be nicely formatted and easy to read
+Testing: You must supply a full set of test cases that cover every function and overall capability.
+Maintainability: The dashboard application should be designed to be easily maintained (fixing bugs, adding new analytics). Implement the code in a readable, simple, and straightforward way. Do not try to be efficient or clever.
+
+
+In the comments of the code, explain any notable things you did to address the above requirements. 

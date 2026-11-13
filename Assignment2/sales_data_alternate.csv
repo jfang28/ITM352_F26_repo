@@ -1,0 +1,7 @@
+sales_region,employee_id,product_category,product_number,produce_name,customer_type,customer_state,order_type,quantity,unit_price
+North,E101,Olive Oil,OO101,Classic Olive Oil,Individual,HI,Retail,4,12.50
+North,E102,Bath Products,BP201,Citrus Soap Set,Business,CA,Wholesale,3,18.00
+South,E101,Gift Basket,GB301,Island Gift Basket,Individual,HI,Retail,1,32.00
+South,E103,Olive Oil,OO102,Garlic Olive Oil,Business,OR,Wholesale,5,16.75
+East,E104,Bath Products,BP202,Lavender Candle,Individual,CA,Retail,2,14.00
+East,E102,Gift Basket,GB302,Tea and Oil Gift Set,Business,OR,Wholesale,2,27.50
