@@ -18,7 +18,7 @@ SALES_DATA_SOURCES = (
     ("Alternate sample sales data (local CSV)", ALTERNATE_SALES_DATA_PATH),
 )
 
-# These fields are needed across the dashboard's predefined analyses.
+# Required fields for data analyses.
 REQUIRED_COLUMNS = (
     "sales_region",
     "employee_id",
@@ -33,7 +33,7 @@ REQUIRED_COLUMNS = (
 )
 
 
-# Dataset selection options
+# Selecting which dataset to analyze
 def select_sales_data_source():
     """Return the chosen dataset label and source, or None if selection is cancelled."""
     while True:
@@ -57,7 +57,7 @@ def select_sales_data_source():
                 return SALES_DATA_SOURCES[index]
         print(f"Enter a number from 1 to {len(SALES_DATA_SOURCES)}, or q to cancel.")
 
-
+# Load the selected dataset and report its status and schema.
 def load_sales_data():
     """Load the selected CSV and report its load status and schema."""
     selected_source = select_sales_data_source()
@@ -145,7 +145,7 @@ def print_pivot(title, pivot):
         print(pivot.to_string())
 
 
-# Allow user to select range of row for analysis.
+# Allow user to select range of rows for analysis.
 def select_analysis_rows(data):
     """Return the chosen 1-based row range/list for one analysis, or None to cancel."""
     row_count = len(data)
@@ -250,7 +250,7 @@ def show_first_rows(data):
         return
 
 
-# Menu item 2: sum quantity-times-price sales by region and order type.
+# Menu item 2: Total sales by region and order type.
 def total_sales_by_region_and_type(data):
     """Display total line-item sales, grouped by region and order type."""
     analysis = make_analysis_data(
@@ -272,7 +272,7 @@ def total_sales_by_region_and_type(data):
     print_pivot("Total Sales by Region and Order Type", pivot)
 
 
-# Menu item 3: average quantity-times-price sales by region, state, and order type.
+# Menu item 3: average sales by region, state, and order type.
 def average_sales_by_region_state_and_type(data):
     """Display average line-item sales by region, state, and order type."""
     analysis = make_analysis_data(
@@ -293,7 +293,7 @@ def average_sales_by_region_state_and_type(data):
     print_pivot("Average Sales by Region, State, and Order Type", pivot)
 
 
-# Menu item 4: sum sales for each state, customer type, and order type.
+# Menu item 4: sales by state, customer type, and order type.
 def sales_by_customer_type_and_order_type_by_state(data):
     """Display total sales by customer type and order type for each state."""
     analysis = make_analysis_data(
@@ -313,7 +313,7 @@ def sales_by_customer_type_and_order_type_by_state(data):
     print_pivot("Sales by State, Customer Type, and Order Type", pivot)
 
 
-# Menu item 5: sum quantities and unit prices for products within each region.
+# Menu item 5: Total sales quantity and price for products within each region.
 def total_quantity_and_price_by_region_and_product(data):
     """Display total quantity and unit-price sums by region and product."""
     analysis = make_analysis_data(
@@ -340,7 +340,7 @@ def total_quantity_and_price_by_region_and_product(data):
     print_pivot("Total Quantity and Unit-Price Sum by Region and Product", pivot)
 
 
-# Menu item 6: sum quantities and unit prices for each order/customer type pair.
+# Menu item 6: Total sales quantity and price for each order and customer type pair.
 def total_quantity_and_price_by_customer_type(data):
     """Display total quantity and unit-price sums by order and customer type."""
     analysis = make_analysis_data(
