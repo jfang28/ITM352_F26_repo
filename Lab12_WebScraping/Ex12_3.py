@@ -5,5 +5,6 @@ import requests
 
 url = "https://shidler.hawaii.edu/itm/people"
 response = requests.get(url)
+response.raise_for_status()
 soup = BeautifulSoup(response.text, "html.parser")
-print(soup.prettify()[:1000])  # Print the first few lines of the HTML
+print("\n".join(soup.prettify().splitlines()[:10]))
