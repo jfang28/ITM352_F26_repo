@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz Results</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card result-card">
+    <p class="eyebrow">Quiz complete</p>
+    <h1>{{ points }} out of {{ total }} points</h1>
+    <p>You used {{ hints_used }} hint{% if hints_used != 1 %}s{% endif %}.</p>
+    <form action="{{ url_for('restart') }}" method="post">
+      <button type="submit">Try again</button>
+    </form>
+  </main>
+</body>
+</html>

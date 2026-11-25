@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>General Knowledge Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card welcome-card">
+    <p class="eyebrow">Assignment 3 Workshop</p>
+    <h1>Welcome to the quiz!</h1>
+    <p>You will be asked {{ total }} questions. A correct answer earns 1 point.</p>
+    <p>An incorrect answer subtracts 1 point, but your score will never go below zero.</p>
+    <p>Each question has up to 3 hints available.</p>
+    <form action="{{ url_for('start') }}" method="post">
+      <button type="submit">Begin quiz</button>
+    </form>
+  </main>
+</body>
+</html>

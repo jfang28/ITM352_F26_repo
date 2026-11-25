@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Question {{ question_number }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card">
+    <div class="progress">Question {{ question_number }} of {{ total }}</div>
+    {% if feedback %}<div class="feedback">{{ feedback }}</div>{% endif %}
+    <h1>{{ question.question }}</h1>
+
+    <form method="post" class="answer-form">
+      <fieldset>
+        <legend>Choose an answer</legend>
+        {% for option in question.options %}
+          {% set letter = option.split(':', 1)[0] %}
+          {% set text = option.split(':', 1)[1] %}
+          <label class="option">
+            <input type="radio" name="answer" value="{{ letter }}">
+            <span><strong>{{ letter }}</strong> {{ text }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+      <button type="submit" name="action" value="answer">Submit answer</button>
+      <button type="submit" name="action" value="hint" class="secondary"
+              {% if hint_count >= hint_total %}disabled{% endif %}>
+        {% if hint_count >= hint_total %}All hints used{% else %}Get a hint{% endif %}
+      </button>
+    </form>
+
+    {% if hints %}
+      <section class="hints">
+        <h2>Hints</h2>
+        <ol>{% for hint in hints %}<li>{{ hint }}</li>{% endfor %}</ol>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>

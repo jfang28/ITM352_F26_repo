@@ -8,5 +8,7 @@ Because I want the user to answer using the assigned letter to each option, if a
 # Flask Application
 Install dependencies with `python -m pip install -r Assignment1/requirements.txt`, then run the web version from the repository root with `python -m Assignment1.app` and open `http://127.0.0.1:5000` in a browser. The app uses the questions in `questions.py` and appends completed scores to `score_history.txt`. Set the `FLASK_SECRET_KEY` environment variable to a persistent random secret when deploying.
 
+Run the Flask tests with `python -m pytest Assignment1/test_app.py`.
+
 # Use of AI
 AI was used to help me write the questions and answer options to be used for the quiz. I also used AI to figure out how to set a small delay between prints so that not all of the prints would execute at the same time, giving the user time to read each line. AI was also used to make sure I wrote the syntax correctly for each line of code. Although I got the general gist of what I wanted to write, the syntax was not always perfect. It was mainly for smaller errors, such as using {} instead of [] for lists, or forgetting to put a comma between the dictionaries. I also used AI to help me brainstorm ideas for what to make a function for, leading to me choosing to make a function for hints. AI was also used to meet the requirement of writing the history of scores out to a file
